@@ -1,4 +1,5 @@
 use bevy::input::common_conditions::input_toggle_active;
+use bevy::window::PrimaryWindow;
 use bevy::{prelude::*, render::camera::ScalingMode};
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -50,12 +51,12 @@ fn main() {
         .register_type::<Player>()
         .register_type::<Energy>()
         .add_plugins((HumanPlugin, GameUI))
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (spawn_player, spawn_camera))
         .add_systems(Update, character_movement)
         .run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn spawn_camera(mut commands: Commands) {
     let mut camera = Camera2dBundle::default();
 
     camera.projection.scaling_mode = ScalingMode::AutoMin {
@@ -64,12 +65,19 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     };
 
     commands.spawn(camera);
+}
 
-    let texture = asset_server.load("fat_cat.png");
+fn spawn_player(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+) {
+    let window: &Window = window_query.get_single().unwrap();
 
     commands.spawn((
         SpriteBundle {
-            texture,
+            transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.1),
+            texture: asset_server.load("fat_cat.png"),
             ..default()
         },
         Player { speed: 100.0 },
