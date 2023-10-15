@@ -5,6 +5,7 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_inspector_egui::InspectorOptions;
 use humans::HumanPlugin;
+
 use ui::GameUI;
 
 #[derive(Component, InspectorOptions, Default, Reflect)]
@@ -90,20 +91,27 @@ fn character_movement(
     input: Res<Input<KeyCode>>,
     time: Res<Time>,
 ) {
-    for (mut transform, player) in &mut characters {
+    if let Ok((mut transform, player)) = characters.get_single_mut() {
+        let mut direction = Vec3::ZERO;
+
         let movement_amount = player.speed * time.delta_seconds();
 
-        if input.pressed(KeyCode::W) {
-            transform.translation.y += movement_amount;
+        if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
+            direction += Vec3::new(0.0, 1.0, 0.0);
         }
-        if input.pressed(KeyCode::S) {
-            transform.translation.y -= movement_amount;
+        if input.pressed(KeyCode::S) || input.pressed(KeyCode::Down) {
+            direction += Vec3::new(0.0, -1.0, 0.0);
         }
-        if input.pressed(KeyCode::D) {
-            transform.translation.x += movement_amount;
+        if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
+            direction += Vec3::new(1.0, 0.0, 0.0);
         }
-        if input.pressed(KeyCode::A) {
-            transform.translation.x -= movement_amount;
+        if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
+            direction += Vec3::new(-1.0, 0.0, 0.0);
         }
+        if direction.length() > 0.0 {
+            direction = direction.normalize();
+        }
+
+        transform.translation += direction * movement_amount
     }
 }
