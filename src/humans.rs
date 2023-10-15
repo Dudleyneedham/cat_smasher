@@ -1,4 +1,5 @@
 use bevy::{prelude::*, window::PrimaryWindow};
+use bevy_rapier2d::prelude::*;
 use rand::random;
 
 use crate::Money;
@@ -34,11 +35,11 @@ pub struct Human {
 #[derive(Component)]
 pub struct HumanParent;
 
-fn human_movement(mut human_query: Query<(&mut Transform, &Human)>, time: Res<Time>) {
+fn human_movement(mut human_query: Query<(&mut Velocity, &Human)>, time: Res<Time>) {
     for (mut transform, human) in &mut human_query.iter_mut() {
         let movement_amount = human.speed * time.delta_seconds();
-        let direction: Vec3 = Vec3::new(human.direction.x, human.direction.y, 0.0);
-        transform.translation += direction * movement_amount
+        let direction = Vec2::new(human.direction.x, human.direction.y);
+        transform.linvel += direction * movement_amount
     }
 }
 
@@ -46,15 +47,20 @@ fn spawn_human(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     window_query: Query<&Window, With<PrimaryWindow>>,
+    mut rapier_config: ResMut<RapierConfiguration>,
 ) {
     let window: &Window = window_query.get_single().unwrap();
 
-    let texture = asset_server.load("cats_human.png");
-
+    rapier_config.gravity = Vec2::ZERO;
+    let sprite_size = 64.0;
     commands.spawn((
         SpriteBundle {
-            texture,
+            texture: asset_server.load("cats_human.png"),
             transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.1),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(sprite_size, sprite_size)),
+                ..default()
+            },
             ..default()
         },
         Human {
@@ -63,6 +69,8 @@ fn spawn_human(
             direction: Vec2::new(random::<f32>(), random::<f32>()).normalize(),
             size: 64.0,
         },
+        RigidBody::Dynamic,
+        Velocity::zero(),
         Name::new("Human"),
     ));
 }
@@ -90,7 +98,7 @@ fn human_lifetime(
 }
 
 pub fn update_human_direction(
-    mut human_query: Query<(&mut Transform, &mut Human)>,
+    mut human_query: Query<(&mut Velocity, &mut Human)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
     let window = window_query.get_single().unwrap();
@@ -102,7 +110,7 @@ pub fn update_human_direction(
         let y_min = 0.0 + half_human_size;
         let y_max = window.height() - half_human_size;
 
-        let translation = transform.translation;
+        let translation = transform.linvel;
         if translation.x < x_min || translation.x > x_max {
             human.direction.x *= -1.0;
         }
@@ -113,7 +121,7 @@ pub fn update_human_direction(
 }
 
 pub fn confine_human_movement(
-    mut human_query: Query<(&mut Transform, &Human)>,
+    mut human_query: Query<(&mut Velocity, &Human)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
     let window = window_query.get_single().unwrap();
@@ -125,7 +133,7 @@ pub fn confine_human_movement(
         let y_min = 0.0 + half_human_size;
         let y_max = window.height() - half_human_size;
 
-        let mut translation = human_transform.translation;
+        let mut translation = human_transform.linvel;
 
         if translation.x < x_min {
             translation.x = x_min
@@ -139,6 +147,6 @@ pub fn confine_human_movement(
             translation.y = y_max
         }
 
-        human_transform.translation = translation;
+        human_transform.linvel = translation;
     }
 }

@@ -1,5 +1,5 @@
 use bevy::input::common_conditions::input_toggle_active;
-use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier2d::prelude::*;
 use character::CharacterPlugin;
@@ -21,7 +21,7 @@ mod ui;
 
 fn main() {
     App::new()
-        .add_plugins(
+        .add_plugins((
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())
                 .set(WindowPlugin {
@@ -34,40 +34,50 @@ fn main() {
                     ..default()
                 })
                 .build(),
-        )
-        .add_plugins(
+            RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
+            RapierDebugRenderPlugin::default(),
             WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Escape)),
-        )
-        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
-        .add_plugins(RapierDebugRenderPlugin::default())
+        ))
         .insert_resource(Money(100.0))
         .insert_resource(Energy(100.0))
         .register_type::<Money>()
         .register_type::<Energy>()
         .add_plugins((HumanPlugin, GameUI, CharacterPlugin))
-        .add_systems(Startup, (setup_graphics, setup_phsyics))
+        .add_systems(Startup, (setup_graphics, setup_physics))
         .run();
 }
 
 fn setup_graphics(mut commands: Commands) {
-    let mut camera = Camera2dBundle::default();
-
-    camera.projection.scaling_mode = ScalingMode::AutoMin {
-        min_width: 640.0,
-        min_height: 480.0,
-    };
-
-    commands.spawn(camera);
+    commands.spawn(Camera2dBundle {
+        transform: Transform::from_xyz(0.0, 20.0, 0.0),
+        ..default()
+    });
 }
 
-fn setup_phsyics(mut commands: Commands) {
-    commands
-        .spawn(Collider::cuboid(500.0, 50.0))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, -100.0, 0.0)));
+// fn setup_phsyics(mut commands: Commands) {
+//     commands
+//         .spawn(Collider::cuboid(500.0, 50.0))
+//         .insert(TransformBundle::from(Transform::from_xyz(0.0, 0.0, 0.0)));
+
+//     commands
+//         .spawn(RigidBody::Dynamic)
+//         .insert(Collider::ball(50.0))
+//         .insert(Restitution::coefficient(0.7))
+//         .insert(TransformBundle::from(Transform::from_xyz(45.0, 45.0, 0.0)));
+// }
+
+pub fn setup_physics(mut commands: Commands) {
+    let vertices = [Vec2::new(-640.0, 0.0), Vec2::new(640.0, 0.0)];
 
     commands
-        .spawn(RigidBody::Dynamic)
-        .insert(Collider::ball(50.0))
-        .insert(Restitution::coefficient(0.7))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, 400.0, 0.0)));
+        .spawn(SpriteBundle {
+            transform: Transform {
+                translation: Vec3::new(0.0, 640.0 + (1.0 / 2.0), 0.0),
+                scale: Vec3::new(640.0, 1.0, 1.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(RigidBody::Fixed)
+        .insert(Collider::polyline(&vertices, 1.0));
 }
