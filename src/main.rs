@@ -1,20 +1,11 @@
 use bevy::input::common_conditions::input_toggle_active;
-use bevy::window::PrimaryWindow;
 use bevy::{prelude::*, render::camera::ScalingMode};
-use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_inspector_egui::InspectorOptions;
+use bevy_rapier2d::prelude::*;
+use character::CharacterPlugin;
 use humans::HumanPlugin;
 
 use ui::GameUI;
-
-#[derive(Component, InspectorOptions, Default, Reflect)]
-#[reflect(Component, InspectorOptions)]
-
-pub struct Player {
-    #[inspector(min = 0.0)]
-    pub speed: f32,
-}
 
 #[derive(Resource, Default, Reflect)]
 #[reflect(Resource)]
@@ -24,6 +15,7 @@ pub struct Money(pub f32);
 #[reflect(Resource)]
 pub struct Energy(pub f32);
 
+mod character;
 mod humans;
 mod ui;
 
@@ -46,72 +38,36 @@ fn main() {
         .add_plugins(
             WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Escape)),
         )
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        .add_plugins(RapierDebugRenderPlugin::default())
         .insert_resource(Money(100.0))
         .insert_resource(Energy(100.0))
         .register_type::<Money>()
-        .register_type::<Player>()
         .register_type::<Energy>()
-        .add_plugins((HumanPlugin, GameUI))
-        .add_systems(Startup, (spawn_player, spawn_camera))
-        .add_systems(Update, character_movement)
+        .add_plugins((HumanPlugin, GameUI, CharacterPlugin))
+        .add_systems(Startup, (setup_graphics, setup_phsyics))
         .run();
 }
 
-fn spawn_camera(mut commands: Commands) {
+fn setup_graphics(mut commands: Commands) {
     let mut camera = Camera2dBundle::default();
 
     camera.projection.scaling_mode = ScalingMode::AutoMin {
-        min_width: 256.0,
-        min_height: 144.0,
+        min_width: 640.0,
+        min_height: 480.0,
     };
 
     commands.spawn(camera);
 }
 
-fn spawn_player(
-    mut commands: Commands,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-    asset_server: Res<AssetServer>,
-) {
-    let window: &Window = window_query.get_single().unwrap();
+fn setup_phsyics(mut commands: Commands) {
+    commands
+        .spawn(Collider::cuboid(500.0, 50.0))
+        .insert(TransformBundle::from(Transform::from_xyz(0.0, -100.0, 0.0)));
 
-    commands.spawn((
-        SpriteBundle {
-            transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.1),
-            texture: asset_server.load("fat_cat.png"),
-            ..default()
-        },
-        Player { speed: 100.0 },
-        Name::new("Fat Cat Player"),
-    ));
-}
-
-fn character_movement(
-    mut characters: Query<(&mut Transform, &Player)>,
-    input: Res<Input<KeyCode>>,
-    time: Res<Time>,
-) {
-    if let Ok((mut transform, player)) = characters.get_single_mut() {
-        let mut direction = Vec3::ZERO;
-
-        let movement_amount = player.speed * time.delta_seconds();
-
-        if input.pressed(KeyCode::W) || input.pressed(KeyCode::Up) {
-            direction += Vec3::new(0.0, 1.0, 0.0);
-        }
-        if input.pressed(KeyCode::S) || input.pressed(KeyCode::Down) {
-            direction += Vec3::new(0.0, -1.0, 0.0);
-        }
-        if input.pressed(KeyCode::D) || input.pressed(KeyCode::Right) {
-            direction += Vec3::new(1.0, 0.0, 0.0);
-        }
-        if input.pressed(KeyCode::A) || input.pressed(KeyCode::Left) {
-            direction += Vec3::new(-1.0, 0.0, 0.0);
-        }
-        if direction.length() > 0.0 {
-            direction = direction.normalize();
-        }
-
-        transform.translation += direction * movement_amount
-    }
+    commands
+        .spawn(RigidBody::Dynamic)
+        .insert(Collider::ball(50.0))
+        .insert(Restitution::coefficient(0.7))
+        .insert(TransformBundle::from(Transform::from_xyz(0.0, 400.0, 0.0)));
 }

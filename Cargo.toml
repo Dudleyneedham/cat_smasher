@@ -10,6 +10,7 @@ edition = "2021"
 bevy = { verison = "0.11.3", features = ["dynamic_linking"] }
 rand = "0.8.5"
 bevy-inspector-egui = "0.20"
+bevy_rapier2d = "0.22.0"
 
 [toolchain]
 channel = "nightly"
