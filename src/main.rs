@@ -45,7 +45,7 @@ fn main() {
         .register_type::<Money>()
         .register_type::<Energy>()
         .add_plugins((HumanPlugin, GameUI, CharacterPlugin))
-        .add_systems(Startup, (setup_graphics, setup_phsyics))
+        .add_systems(Startup, setup_graphics)
         .run();
 }
 
@@ -58,16 +58,4 @@ fn setup_graphics(mut commands: Commands) {
     };
 
     commands.spawn(camera);
-}
-
-fn setup_phsyics(mut commands: Commands) {
-    commands
-        .spawn(Collider::cuboid(500.0, 50.0))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, -100.0, 0.0)));
-
-    commands
-        .spawn(RigidBody::Dynamic)
-        .insert(Collider::ball(50.0))
-        .insert(Restitution::coefficient(0.7))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, 400.0, 0.0)));
 }
