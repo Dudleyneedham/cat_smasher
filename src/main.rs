@@ -1,5 +1,6 @@
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy_ecs_ldtk::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier2d::prelude::*;
 use character::CharacterPlugin;
@@ -14,6 +15,11 @@ pub struct Money(pub f32);
 #[derive(Resource, Default, Reflect)]
 #[reflect(Resource)]
 pub struct Energy(pub f32);
+#[derive(Default, Bundle, LdtkEntity)]
+pub struct MyBundle {
+    #[sprite_sheet_bundle]
+    sprite_bundle: SpriteSheetBundle,
+}
 
 mod character;
 mod humans;
@@ -27,7 +33,6 @@ fn main() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Cat Coin Stealer".into(),
-                        resolution: (640.0, 480.0).into(),
                         resizable: true,
                         ..default()
                     }),
@@ -40,8 +45,11 @@ fn main() {
         )
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
         .add_plugins(RapierDebugRenderPlugin::default())
+        .add_plugins(LdtkPlugin)
+        .insert_resource(LevelSelection::Index(0))
         .insert_resource(Money(100.0))
         .insert_resource(Energy(100.0))
+        .register_ldtk_entity::<MyBundle>("MyEntityIdentifier")
         .register_type::<Money>()
         .register_type::<Energy>()
         .add_plugins((HumanPlugin, GameUI, CharacterPlugin))
@@ -49,13 +57,18 @@ fn main() {
         .run();
 }
 
-fn setup_graphics(mut commands: Commands) {
+fn setup_graphics(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut camera = Camera2dBundle::default();
 
     camera.projection.scaling_mode = ScalingMode::AutoMin {
         min_width: 640.0,
         min_height: 480.0,
     };
+
+    commands.spawn(LdtkWorldBundle {
+        ldtk_handle: asset_server.load("my_project.ldtk"),
+        ..default()
+    });
 
     commands.spawn(camera);
 }

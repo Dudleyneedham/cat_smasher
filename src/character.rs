@@ -36,7 +36,7 @@ fn spawn_character(
         },
         Character {
             speed: 100.0,
-            size: 64.0,
+            size: 10.0,
         },
         Name::new("Fat Cat Character"),
     ));
