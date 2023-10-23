@@ -47,6 +47,7 @@ fn main() {
             RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
             RapierDebugRenderPlugin::default(),
             TilemapPlugin,
+            LdtkPlugin,
             HumanPlugin,
             GameUI,
             CharacterPlugin,
