@@ -30,7 +30,8 @@ fn spawn_character(
 
     commands.spawn((
         SpriteBundle {
-
+            transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.1)
+                .with_scale(Vec3::new(0.1, 0.1, 1.0)),
             texture: asset_server.load("fat_cat.png"),
             ..default()
         },
