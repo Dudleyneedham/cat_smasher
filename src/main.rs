@@ -43,10 +43,22 @@ fn main() {
         .add_plugins(
             WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Escape)),
         )
-        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
-        .add_plugins(RapierDebugRenderPlugin::default())
-        .add_plugins(LdtkPlugin)
-        .insert_resource(LevelSelection::Index(0))
+        .add_plugins((
+            LdtkPlugin,
+            RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
+        ))
+        .insert_resource(LevelSelection::Uid(0))
+        .insert_resource(LdtkSettings {
+            level_spawn_behavior: LevelSpawnBehavior::UseWorldTranslation {
+                load_level_neighbors: true,
+            },
+            set_clear_color: SetClearColor::FromLevelBackground,
+            ..Default::default()
+        })
+        .insert_resource(RapierConfiguration {
+            gravity: Vec2::new(0.0, -2000.0),
+            ..Default::default()
+        })
         .insert_resource(Money(100.0))
         .insert_resource(Energy(100.0))
         .register_ldtk_entity::<MyBundle>("MyEntityIdentifier")
@@ -58,17 +70,13 @@ fn main() {
 }
 
 fn setup_graphics(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let mut camera = Camera2dBundle::default();
+    let camera = Camera2dBundle::default();
+    commands.spawn(camera);
 
-    camera.projection.scaling_mode = ScalingMode::AutoMin {
-        min_width: 640.0,
-        min_height: 480.0,
-    };
+    let ldtk_handle = asset_server.load("cat_smasher.ldtk");
 
     commands.spawn(LdtkWorldBundle {
-        ldtk_handle: asset_server.load("my_project.ldtk"),
-        ..default()
+        ldtk_handle,
+        ..Default::default()
     });
-
-    commands.spawn(camera);
 }
