@@ -11,6 +11,7 @@ bevy = { verison = "0.11.3", features = ["dynamic_linking"] }
 rand = "0.8.5"
 bevy-inspector-egui = "0.20"
 bevy_rapier2d = "0.22.0"
+bevy_ecs_tilemap = "0.11.1"
 
 [toolchain]
 channel = "nightly"
