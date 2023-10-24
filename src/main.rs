@@ -2,6 +2,7 @@ use bevy::input::common_conditions::input_toggle_active;
 use bevy::{prelude::*, render::camera::ScalingMode};
 use bevy_ecs_tilemap::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_pancam::{PanCam, PanCamPlugin};
 use bevy_rapier2d::prelude::*;
 use character::CharacterPlugin;
 use humans::HumanPlugin;
@@ -22,7 +23,7 @@ mod ui;
 
 fn main() {
     App::new()
-        .add_plugins(
+        .add_plugins((
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())
                 .set(WindowPlugin {
@@ -35,7 +36,8 @@ fn main() {
                     ..default()
                 })
                 .build(),
-        )
+            PanCamPlugin::default(),
+        ))
         .add_plugins((
             WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Escape)),
             RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
@@ -61,7 +63,7 @@ fn setup_camera(mut commands: Commands) {
         min_height: 480.0,
     };
 
-    commands.spawn(camera);
+    commands.spawn(camera).insert(PanCam::default());
 }
 
 fn setup_tilemap(
